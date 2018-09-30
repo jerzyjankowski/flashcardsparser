@@ -8,7 +8,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
-public class Parser { 
+public class Parser {
 
     private static List<Language> languages = Lists.newArrayList(
             Language.getLanguage("en"), Language.getLanguage("de"), Language.getLanguage("es"), Language.getLanguage("fr"));

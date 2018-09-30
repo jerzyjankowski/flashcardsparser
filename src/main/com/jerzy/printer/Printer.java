@@ -35,95 +35,72 @@ public class Printer {
         try (PDDocument doc = new PDDocument()) {
             FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
 
-            PDPage polishPage = new PDPage(PDRectangle.A4);
-            doc.addPage(polishPage);
-
-            try (PDPageContentStream cont = new PDPageContentStream(doc, polishPage)) {
-                printCropBoxInfo(polishPage);
-                drawLines(cont);
-
-                cont.transform(Matrix.getRotateInstance(Math.toRadians(90) , 0, 0));
-                cont.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
-
-                for(int i = 0; i < flashcards.size(); i++) {
-                    drawText(cont, flashcards.get(i).getPolishWords().get(0), i % 4, (i / 4) % 6);
-                }
-            }
-
-            PDPage foreignPage = new PDPage(PDRectangle.A4);
-            doc.addPage(foreignPage);
-
-            try (PDPageContentStream cont = new PDPageContentStream(doc, foreignPage)) {
-                printCropBoxInfo(foreignPage);
-                drawLines(cont);
-
-                cont.transform(Matrix.getRotateInstance(Math.toRadians(90) , 0, 0));
-                cont.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
-
-                for(int i = 0; i < flashcards.size(); i++) {
-                    drawForeignText(cont, flashcards.get(i).getForeignWords().get(0), i % 4, (i / 4) % 6);
-                }
+            for(int i = 0; i < flashcards.size(); i += 24) {
+                createPage(doc, flashcards, i, true);
+                createPage(doc, flashcards, i, false);
             }
 
             doc.save("./output/first.pdf");
         }
     }
 
+    private static void createPage(PDDocument doc, List<Flashcard> flashcards, int startingFlashcardNumber, boolean isPolish) throws IOException {
+        PDPage page = new PDPage(PDRectangle.A4);
+        doc.addPage(page);
+
+        try (PDPageContentStream cont = new PDPageContentStream(doc, page)) {
+            printCropBoxInfo(page);
+            drawLines(cont);
+
+            cont.transform(Matrix.getRotateInstance(Math.toRadians(90), 0, 0));
+            cont.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
+
+            for (int i = startingFlashcardNumber; i < flashcards.size() && i < startingFlashcardNumber + 24; i++) {
+                if(isPolish) {
+                    drawText(cont, flashcards.get(i).getPolishWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
+                }
+                else {
+                    drawForeignText(cont, flashcards.get(i).getForeignWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
+                }
+            }
+        }
+    }
+
     private static List<Flashcard> createSampleFlashcards() {
+        FlashcardInfo flashcardInfo = new FlashcardInfo("de", 1, "Miłość i seks");
         return Lists.newArrayList(
-                new Flashcard("odholować", "abschleppen"),
-                new Flashcard("absolutny, bezwzględny", "absolut"),
-                new Flashcard("szanować, poważać", "achten"),
-                new Flashcard("baczność, uwaga", "die Achtung"),
-                new Flashcard("akt, czyn", "der Akt"),
-                new Flashcard("jednak, jednakże", "allerdings"),
-                new Flashcard("drugi, następny, inny", "ander"),
-                new Flashcard("zmiana", "die Änderung"),
-                new Flashcard("doceniać", "anerkennen"),
-                new Flashcard("wydawać się", "anmuten"),
-                new Flashcard("przyjmować, akceptować", "annehmen"),
-                new Flashcard("dopasowywać", "anpassen"),
-                new Flashcard("zamiast", "anstatt"),
-                new Flashcard("rozpoczynać, przystąpić", "antreten"),
-                new Flashcard("rodzajnik", "der Artikel"),
-                new Flashcard("aspekt", "der Aspekt"),
-                new Flashcard("świadczyć, zdobyć", "aufbringen"),
-                new Flashcard("przestawać, kończyć", "aufhören"),
-                new Flashcard("rozwiązanie, rozpuszczenie", "die Auflösung"),
-                new Flashcard("stawić, ustawiać", "aufstellen"),
-                new Flashcard("pojawić się", "auftauchen"),
-                new Flashcard("wykazywać", "aufweisen"),
-                new Flashcard("wyprowadzać", "ausführen"),
-                new Flashcard("wymówka, wykręt", "die Ausrede")
+                new Flashcard("odholować", "abschleppen", flashcardInfo),
+                new Flashcard("absolutny, bezwzględny", "absolut", flashcardInfo),
+                new Flashcard("szanować, poważać", "achten", flashcardInfo),
+                new Flashcard("baczność, uwaga", "die Achtung", flashcardInfo),
+                new Flashcard("akt, czyn", "der Akt", flashcardInfo),
+                new Flashcard("jednak, jednakże", "allerdings", flashcardInfo),
+                new Flashcard("drugi, następny, inny", "ander", flashcardInfo),
+                new Flashcard("zmiana", "die Änderung", flashcardInfo),
+                new Flashcard("doceniać", "anerkennen", flashcardInfo),
+                new Flashcard("wydawać się", "anmuten", flashcardInfo),
+                new Flashcard("przyjmować, akceptować", "annehmen", flashcardInfo),
+                new Flashcard("dopasowywać", "anpassen", flashcardInfo),
+                new Flashcard("zamiast", "anstatt", flashcardInfo),
+                new Flashcard("rozpoczynać, przystąpić", "antreten", flashcardInfo),
+                new Flashcard("rodzajnik", "der Artikel", flashcardInfo),
+                new Flashcard("aspekt", "der Aspekt", flashcardInfo),
+                new Flashcard("świadczyć, zdobyć", "aufbringen", flashcardInfo),
+                new Flashcard("przestawać, kończyć", "aufhören", flashcardInfo),
+                new Flashcard("rozwiązanie, rozpuszczenie", "die Auflösung", flashcardInfo),
+                new Flashcard("stawić, ustawiać", "aufstellen", flashcardInfo),
+                new Flashcard("pojawić się", "auftauchen", flashcardInfo),
+                new Flashcard("wykazywać", "aufweisen", flashcardInfo),
+                new Flashcard("wyprowadzać", "ausführen", flashcardInfo),
+                new Flashcard("wymówka, wykręt", "die Ausrede", flashcardInfo)
         );
     }
 
     private static List<Flashcard> createSampleFlashcards2() {
+        FlashcardInfo flashcardInfo = new FlashcardInfo("de", 1, "Miłość i seks");
         return Lists.newArrayList(
-                new Flashcard("zamieniać, wymieniać (się na coś)", "austauschen"),
-                new Flashcard("przystosowany dla niepełnosprawnych", "behindertengerecht"),
-                new Flashcard("notabene, w dodatku, nawiasem mówiąc", "übrigens"),
-                new Flashcard("oddawać buty do reperacji", "die Schuhe reparieren lassen"),
-                new Flashcard("uczenie się języków obcych", "das Fremdsprachenlernen"),
-                new Flashcard("wyskakujące okienko z reklamą", "Pop-up Fenster"),
-                new Flashcard("dobrze się bawić, prowadzić miłą rozmowę", "sich gut unterhalten"),
-                new Flashcard("spotykać się z przyjaciółmi", "sich mit den Freunden treffen"),
-                new Flashcard("jedyny w swoim rodzaju, znakomity", "einzigartig"),
-                new Flashcard("kłócić się o coś", "streiten sich über etwas"),
-                new Flashcard("poprosić o kartę", "um die Speisekarte bitten"),
-                new Flashcard("być z kimś w związku", "in einer Beziehung mit jmdm sein"),
-                new Flashcard("irytujący, denerwujący, nieprzyjemny", "ärgerlich"),
-                new Flashcard("brać na siebie odpowiedzialność (czas.)", "verantworten"),
-                new Flashcard("być zatrudnionym, pracować zawodowo", "berufstätig sein"),
-                new Flashcard("być zaproszonym na spotkanie", "zum Treffen eingeladen sein"),
-                new Flashcard("niewypłacalność, upadłość, bankructwo", "die Insolvenz"),
-                new Flashcard("ciśnienie powietrza (atmosferyczne)", "der Luftdruck"),
-                new Flashcard("świadomy zagrożeń dla środowiska", "umweltbewusst"),
-                new Flashcard("włamywanie się do systemów komputerowych", "das Hacking"),
-                new Flashcard("być bezradnym i opuszczonym", "hilflos und verlassen sein"),
-                new Flashcard("załatwiać bilety, zaopatrzyć się w bilety", "Karten besorgen"),
-                new Flashcard("Szanowni Państwo", "SehrgeehrteDamenundHerrenHerren"),
-                new Flashcard("oblać egzamin", "die Prüfung nicht bestehen")
+                new Flashcard("odholować", "abschleppen", flashcardInfo),
+                new Flashcard("dobrze się bawić, prowadzić miłą rozmowę", "sich gut unterhalten", flashcardInfo)
         );
     }
 
@@ -150,11 +127,11 @@ public class Printer {
         }
     }
 
-    private static void drawForeignText(PDPageContentStream cont, String text, int x, int y) throws IOException {
-        drawText(cont, text, 3-x, y);
+    private static void drawForeignText(PDPageContentStream cont, String text, String flashcardInfoText, int x, int y) throws IOException {
+        drawText(cont, text, flashcardInfoText, 3-x, y);
     }
 
-    private static void drawText(PDPageContentStream cont, String text, int xField, int yField) throws IOException {
+    private static void drawText(PDPageContentStream cont, String text, String flashcardInfoText, int xField, int yField) throws IOException {
 
         List<String> lines;
         float width;
@@ -208,5 +185,16 @@ public class Printer {
             cont.showText(lineText);
             cont.endText();
         }
+
+        float flashcardInfoFontSize = 6;
+        cont.beginText();
+        cont.setFont(FONT, flashcardInfoFontSize);
+        cont.setNonStrokingColor(128, 128, 128);
+        cont.setLeading(fontSize * 0.8f);
+
+        cont.newLineAtOffset(xField * CARD_WIDTH + CARD_WIDTH / 2 - FONT.getStringWidth(flashcardInfoText)/1000 * flashcardInfoFontSize / 2,
+                yField * CARD_HEIGHT + 10);
+        cont.showText(flashcardInfoText);
+        cont.endText();
     }
 }

@@ -6,13 +6,16 @@ import java.util.List;
 public class Flashcard {
     private List<String> polishWords;
     private List<String> foreignWords;
+    private FlashcardInfo flashcardInfo;
 
-    public Flashcard(String polishWord, String foreignWord) {
+    public Flashcard(String polishWord, String foreignWord, FlashcardInfo flashcardInfo) {
         polishWords = new ArrayList<>();
         polishWords.add(polishWord);
 
         foreignWords = new ArrayList<>();
         foreignWords.add(foreignWord);
+
+        this.flashcardInfo = flashcardInfo;
     }
 
     public void addWords(String polishWord, String foreignWord) {
@@ -33,5 +36,9 @@ public class Flashcard {
 
     public List<String> getForeignWords() {
         return foreignWords;
+    }
+
+    public String getFlashcardInfoString() {
+        return "[" + flashcardInfo.getForeignLanguage() + "] " + flashcardInfo.getLevel() + ". " + flashcardInfo.getCategory();
     }
 }
