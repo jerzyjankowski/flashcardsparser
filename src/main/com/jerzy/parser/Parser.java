@@ -17,7 +17,7 @@ public class Parser {
     private CategoriesOrderProvider categoriesOrderProvider = new CategoriesOrderProvider();
 
     private String languageTitle;
-    private String levelTitle = " [poziom: ";
+    private String levelTitle = " poziom: ";
     private String categoryTitle = ", kategoria: ";
     private String endTitle = "]";
     private Map<Integer, String> categoryMap = new HashMap<>();
@@ -43,7 +43,7 @@ public class Parser {
         categoryOrder = categoriesOrderProvider.getCategoriesOrder(language);
         inputStreamFileName = ".\\input\\b_sb_u1_" + language.getLanguageCode() + ".txtde";
         outputStreamFileName = ".\\output\\" + language.getLanguageCode() + "_words.txt";
-        languageTitle = language.getTitle();
+        languageTitle = language.getTitle() + " [język: " + language.getLanguageCode() + ", ";
     }
 
     private void parse() throws IOException {

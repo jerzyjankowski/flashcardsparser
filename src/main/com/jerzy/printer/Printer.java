@@ -8,9 +8,8 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.*;
 import org.apache.pdfbox.util.Matrix;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,7 @@ public class Printer {
     private static Float[] HORIZONTALS_Y = {0.0f, CARD_WIDTH, 2 * CARD_WIDTH, 3 * CARD_WIDTH, 4 * CARD_WIDTH};
 
     public static void main(String[] args) throws IOException {
-        List<Flashcard> flashcards = createSampleFlashcards2();
+        List<Flashcard> flashcards = loadFlashcards();
 
         try (PDDocument doc = new PDDocument()) {
             FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
@@ -66,8 +65,41 @@ public class Printer {
         }
     }
 
+    private static List<Flashcard> loadFlashcards() throws IOException {
+        FlashcardInfo flashcardInfo = null;
+        List<Flashcard> flashcards = new ArrayList<>();
+
+        String inputStreamFileName = ".\\output\\es_words.txt";
+        InputStream inputStream = new FileInputStream(inputStreamFileName);
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, Charset.forName("UTF-16"));
+        int data = inputStreamReader.read();
+        StringBuffer input = new StringBuffer();
+        while(data != -1){
+            input.append((char)(data));
+            data = inputStreamReader.read();
+            if(data == '\n' || data == -1) {
+                String inputString = input.toString();
+
+                if(inputString.contains("***<")) {
+                    flashcardInfo = new FlashcardInfo(
+                            inputString.substring(inputString.indexOf("język: ") + 7, inputString.indexOf("język: ") + 9),
+                            inputString.substring(inputString.indexOf("poziom: ") + 8, inputString.indexOf("poziom: ") + 9),
+                            inputString.substring(inputString.indexOf("kategoria: ") + 11, inputString.indexOf("]>***")));
+                }
+                if(inputString.contains(";=;")) {
+                    flashcards.add(new Flashcard(inputString.split(";=;")[0].replace("\n", ""), inputString.split(";=;")[1], flashcardInfo));
+                }
+
+                input = new StringBuffer();
+            }
+        }
+        inputStreamReader.close();
+
+        return flashcards;
+    }
+
     private static List<Flashcard> createSampleFlashcards() {
-        FlashcardInfo flashcardInfo = new FlashcardInfo("de", 1, "Miłość i seks");
+        FlashcardInfo flashcardInfo = new FlashcardInfo("de", "1", "Miłość i seks");
         return Lists.newArrayList(
                 new Flashcard("odholować", "abschleppen", flashcardInfo),
                 new Flashcard("absolutny, bezwzględny", "absolut", flashcardInfo),
@@ -97,7 +129,7 @@ public class Printer {
     }
 
     private static List<Flashcard> createSampleFlashcards2() {
-        FlashcardInfo flashcardInfo = new FlashcardInfo("de", 1, "Miłość i seks");
+        FlashcardInfo flashcardInfo = new FlashcardInfo("de", "1", "Miłość i seks");
         return Lists.newArrayList(
                 new Flashcard("odholować", "abschleppen", flashcardInfo),
                 new Flashcard("dobrze się bawić, prowadzić miłą rozmowę", "sich gut unterhalten", flashcardInfo)

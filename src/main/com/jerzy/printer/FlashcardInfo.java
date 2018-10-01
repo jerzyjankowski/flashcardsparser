@@ -2,10 +2,10 @@ package com.jerzy.printer;
 
 public class FlashcardInfo {
     private String foreignLanguage;
-    private int level;
+    private String level;
     private String category;
 
-    public FlashcardInfo(String foreignLanguage, int level, String category) {
+    public FlashcardInfo(String foreignLanguage, String level, String category) {
         this.foreignLanguage = foreignLanguage;
         this.level = level;
         this.category = category;
@@ -19,11 +19,11 @@ public class FlashcardInfo {
         this.foreignLanguage = foreignLanguage;
     }
 
-    public int getLevel() {
+    public String getLevel() {
         return level;
     }
 
-    public void setLevel(int level) {
+    public void setLevel(String level) {
         this.level = level;
     }
 
