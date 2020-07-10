@@ -28,10 +28,11 @@ public class Printer {
             5 * CARD_HEIGHT, 6 * CARD_HEIGHT};
     private static Float[] HORIZONTALS_Y = {0.0f, CARD_WIDTH, 2 * CARD_WIDTH, 3 * CARD_WIDTH, 4 * CARD_WIDTH};
 
-    public static void main(String[] args) throws IOException {
-        List<Flashcard> flashcards = loadFlashcards();
+    public static void main(String[] args) {
 
         try (PDDocument doc = new PDDocument()) {
+            List<Flashcard> flashcards = loadFlashcards();
+            System.out.println(flashcards.size());
             FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
 
             for(int i = 0; i < flashcards.size(); i += 24) {
@@ -39,7 +40,9 @@ public class Printer {
                 createPage(doc, flashcards, i, false);
             }
 
-            doc.save("./output/first.pdf");
+            doc.save("./output/flashcards.pdf");
+        } catch(IOException e) {
+
         }
     }
 
@@ -48,8 +51,8 @@ public class Printer {
         doc.addPage(page);
 
         try (PDPageContentStream cont = new PDPageContentStream(doc, page)) {
-            printCropBoxInfo(page);
-            drawLines(cont);
+//            printCropBoxInfo(page);
+//            drawLines(cont);
 
             cont.transform(Matrix.getRotateInstance(Math.toRadians(90), 0, 0));
             cont.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
@@ -69,7 +72,7 @@ public class Printer {
         FlashcardInfo flashcardInfo = null;
         List<Flashcard> flashcards = new ArrayList<>();
 
-        String inputStreamFileName = ".\\output\\es_words.txt";
+        String inputStreamFileName = ".\\output\\de_words12.txt";
         InputStream inputStream = new FileInputStream(inputStreamFileName);
         InputStreamReader inputStreamReader = new InputStreamReader(inputStream, Charset.forName("UTF-16"));
         int data = inputStreamReader.read();
@@ -79,12 +82,16 @@ public class Printer {
             data = inputStreamReader.read();
             if(data == '\n' || data == -1) {
                 String inputString = input.toString();
+                System.out.println(inputString + " ");
 
                 if(inputString.contains("***<")) {
                     flashcardInfo = new FlashcardInfo(
                             inputString.substring(inputString.indexOf("język: ") + 7, inputString.indexOf("język: ") + 9),
                             inputString.substring(inputString.indexOf("poziom: ") + 8, inputString.indexOf("poziom: ") + 9),
                             inputString.substring(inputString.indexOf("kategoria: ") + 11, inputString.indexOf("]>***")));
+                    if(inputString.contains(";=;")) {
+                        inputString = inputString.substring(inputString.indexOf("]>***") + 5);
+                    }
                 }
                 if(inputString.contains(";=;")) {
                     flashcards.add(new Flashcard(inputString.split(";=;")[0].replace("\n", ""), inputString.split(";=;")[1], flashcardInfo));
