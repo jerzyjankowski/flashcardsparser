@@ -1,6 +1,6 @@
 package com.jerzy.printer;
 
-import com.google.common.collect.Lists;
+import com.jerzy.printer.model.Flashcard;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -9,7 +9,6 @@ import org.apache.pdfbox.pdmodel.font.*;
 import org.apache.pdfbox.util.Matrix;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,15 +27,11 @@ public class Printer {
             5 * CARD_HEIGHT, 6 * CARD_HEIGHT};
     private static Float[] HORIZONTALS_Y = {0.0f, CARD_WIDTH, 2 * CARD_WIDTH, 3 * CARD_WIDTH, 4 * CARD_WIDTH};
 
-    public static void main(String[] args) {
-        Printer.parseAndPrintFlashcards("./input/de_words12.txt", "./output/flashcards.pdf");
-    }
+    private Loader loader = new Loader();
 
-    public static void parseAndPrintFlashcards(String inputFilename, String outputFilename) {
-        System.out.println(inputFilename + " " + outputFilename);
+    public boolean parseAndPrintFlashcards(String inputFilename, String outputFilename) {
         try (PDDocument doc = new PDDocument()) {
-            List<Flashcard> flashcards = loadFlashcards(inputFilename);
-            System.out.println(flashcards.size());
+            List<Flashcard> flashcards = loader.loadFlashcardsFromFile(inputFilename);
             FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
 
             for(int i = 0; i < flashcards.size(); i += 24) {
@@ -45,12 +40,13 @@ public class Printer {
             }
 
             doc.save(outputFilename);
+            return true;
         } catch(IOException e) {
-
+            return false;
         }
     }
 
-    private static void createPage(PDDocument doc, List<Flashcard> flashcards, int startingFlashcardNumber, boolean isPolish) throws IOException {
+    private void createPage(PDDocument doc, List<Flashcard> flashcards, int startingFlashcardNumber, boolean isPolish) throws IOException {
         PDPage page = new PDPage(PDRectangle.A4);
         doc.addPage(page);
 
@@ -63,7 +59,7 @@ public class Printer {
 
             for (int i = startingFlashcardNumber; i < flashcards.size() && i < startingFlashcardNumber + 24; i++) {
                 if(isPolish) {
-                    drawText(cont, flashcards.get(i).getPolishWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
+                    drawText(cont, flashcards.get(i).getFrontWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
                 }
                 else {
                     drawForeignText(cont, flashcards.get(i).getForeignWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
@@ -72,80 +68,9 @@ public class Printer {
         }
     }
 
-    private static List<Flashcard> loadFlashcards(String inputFilename) throws IOException {
-        FlashcardInfo flashcardInfo = null;
-        List<Flashcard> flashcards = new ArrayList<>();
-        InputStream inputStream = new FileInputStream(inputFilename);
-        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, Charset.forName("UTF-16"));
-        int data = inputStreamReader.read();
-        StringBuffer input = new StringBuffer();
-        while(data != -1){
-            input.append((char)(data));
-            data = inputStreamReader.read();
-            if(data == '\n' || data == -1) {
-                String inputString = input.toString();
-                System.out.println(inputString + " ");
 
-                if(inputString.contains("***<")) {
-                    flashcardInfo = new FlashcardInfo(
-                            inputString.substring(inputString.indexOf("język: ") + 7, inputString.indexOf("język: ") + 9),
-                            inputString.substring(inputString.indexOf("poziom: ") + 8, inputString.indexOf("poziom: ") + 9),
-                            inputString.substring(inputString.indexOf("kategoria: ") + 11, inputString.indexOf("]>***")));
-                    if(inputString.contains(";=;")) {
-                        inputString = inputString.substring(inputString.indexOf("]>***") + 5);
-                    }
-                }
-                if(inputString.contains(";=;")) {
-                    flashcards.add(new Flashcard(inputString.split(";=;")[0].replace("\n", ""), inputString.split(";=;")[1], flashcardInfo));
-                }
 
-                input = new StringBuffer();
-            }
-        }
-        inputStreamReader.close();
-
-        return flashcards;
-    }
-
-    private static List<Flashcard> createSampleFlashcards() {
-        FlashcardInfo flashcardInfo = new FlashcardInfo("de", "1", "Miłość i seks");
-        return Lists.newArrayList(
-                new Flashcard("odholować", "abschleppen", flashcardInfo),
-                new Flashcard("absolutny, bezwzględny", "absolut", flashcardInfo),
-                new Flashcard("szanować, poważać", "achten", flashcardInfo),
-                new Flashcard("baczność, uwaga", "die Achtung", flashcardInfo),
-                new Flashcard("akt, czyn", "der Akt", flashcardInfo),
-                new Flashcard("jednak, jednakże", "allerdings", flashcardInfo),
-                new Flashcard("drugi, następny, inny", "ander", flashcardInfo),
-                new Flashcard("zmiana", "die Änderung", flashcardInfo),
-                new Flashcard("doceniać", "anerkennen", flashcardInfo),
-                new Flashcard("wydawać się", "anmuten", flashcardInfo),
-                new Flashcard("przyjmować, akceptować", "annehmen", flashcardInfo),
-                new Flashcard("dopasowywać", "anpassen", flashcardInfo),
-                new Flashcard("zamiast", "anstatt", flashcardInfo),
-                new Flashcard("rozpoczynać, przystąpić", "antreten", flashcardInfo),
-                new Flashcard("rodzajnik", "der Artikel", flashcardInfo),
-                new Flashcard("aspekt", "der Aspekt", flashcardInfo),
-                new Flashcard("świadczyć, zdobyć", "aufbringen", flashcardInfo),
-                new Flashcard("przestawać, kończyć", "aufhören", flashcardInfo),
-                new Flashcard("rozwiązanie, rozpuszczenie", "die Auflösung", flashcardInfo),
-                new Flashcard("stawić, ustawiać", "aufstellen", flashcardInfo),
-                new Flashcard("pojawić się", "auftauchen", flashcardInfo),
-                new Flashcard("wykazywać", "aufweisen", flashcardInfo),
-                new Flashcard("wyprowadzać", "ausführen", flashcardInfo),
-                new Flashcard("wymówka, wykręt", "die Ausrede", flashcardInfo)
-        );
-    }
-
-    private static List<Flashcard> createSampleFlashcards2() {
-        FlashcardInfo flashcardInfo = new FlashcardInfo("de", "1", "Miłość i seks");
-        return Lists.newArrayList(
-                new Flashcard("odholować", "abschleppen", flashcardInfo),
-                new Flashcard("dobrze się bawić, prowadzić miłą rozmowę", "sich gut unterhalten", flashcardInfo)
-        );
-    }
-
-    private static void printCropBoxInfo(PDPage myPage) {
+    private void printCropBoxInfo(PDPage myPage) {
         PDRectangle cropBox = myPage.getCropBox();
         System.out.println(PAGE_WIDTH + " " + PAGE_HEIGHT);
         System.out.println(cropBox.getWidth() + " " + cropBox.getHeight());
@@ -153,7 +78,7 @@ public class Printer {
         System.out.println(cropBox.getUpperRightX() + " " + cropBox.getUpperRightY());
     }
 
-    private static void drawLines(PDPageContentStream cont) throws IOException {
+    private void drawLines(PDPageContentStream cont) throws IOException {
         cont.setStrokingColor(192, 192, 192);
         for(int i = 1; i < VERTICALS_NO; i++) {
             cont.moveTo(VERTICALS_X[i], 0);
@@ -168,11 +93,11 @@ public class Printer {
         }
     }
 
-    private static void drawForeignText(PDPageContentStream cont, String text, String flashcardInfoText, int x, int y) throws IOException {
+    private void drawForeignText(PDPageContentStream cont, String text, String flashcardInfoText, int x, int y) throws IOException {
         drawText(cont, text, flashcardInfoText, 3-x, y);
     }
 
-    private static void drawText(PDPageContentStream cont, String text, String flashcardInfoText, int xField, int yField) throws IOException {
+    private void drawText(PDPageContentStream cont, String text, String flashcardInfoText, int xField, int yField) throws IOException {
 
         List<String> lines;
         float width;

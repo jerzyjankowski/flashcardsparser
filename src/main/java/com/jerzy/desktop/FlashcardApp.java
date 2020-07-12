@@ -26,6 +26,8 @@ public class FlashcardApp extends Application {
     private TextField outputFilenameTextField;
     private String outputFileExtension = ".pdf";
 
+    private Printer printer = new Printer();
+
     public static void main(String[] args) {
         Application.launch(args);
     }
@@ -130,7 +132,7 @@ public class FlashcardApp extends Application {
         Label resultLabel = new Label("");
         button.setOnAction(e -> {
             if (inputFilename != null && outputFileDirectory != null && outputFilenameTextField.getText() != null) {
-                Printer.parseAndPrintFlashcards(inputFilename, outputFileDirectory + "\\" + outputFilenameTextField.getText() + outputFileExtension);
+                boolean success = printer.parseAndPrintFlashcards(inputFilename, outputFileDirectory + "\\" + outputFilenameTextField.getText() + outputFileExtension);
                 resultLabel.setText("success!!!");
             }
         });

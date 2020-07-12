@@ -1,16 +1,16 @@
-package com.jerzy.printer;
+package com.jerzy.printer.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Flashcard {
-    private List<String> polishWords;
+    private List<String> frontWords;
     private List<String> foreignWords;
     private FlashcardInfo flashcardInfo;
 
     public Flashcard(String polishWord, String foreignWord, FlashcardInfo flashcardInfo) {
-        polishWords = new ArrayList<>();
-        polishWords.add(polishWord);
+        frontWords = new ArrayList<>();
+        frontWords.add(polishWord);
 
         foreignWords = new ArrayList<>();
         foreignWords.add(foreignWord);
@@ -18,20 +18,8 @@ public class Flashcard {
         this.flashcardInfo = flashcardInfo;
     }
 
-    public void addWords(String polishWord, String foreignWord) {
-        if(polishWords == null) {
-            polishWords = new ArrayList<>();
-        }
-        polishWords.add(polishWord);
-
-        if(foreignWords == null) {
-            foreignWords = new ArrayList<>();
-        }
-        foreignWords.add(foreignWord);
-    }
-
-    public List<String> getPolishWords() {
-        return polishWords;
+    public List<String> getFrontWords() {
+        return frontWords;
     }
 
     public List<String> getForeignWords() {

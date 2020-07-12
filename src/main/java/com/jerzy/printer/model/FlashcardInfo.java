@@ -1,4 +1,4 @@
-package com.jerzy.printer;
+package com.jerzy.printer.model;
 
 public class FlashcardInfo {
     private String foreignLanguage;
@@ -15,23 +15,11 @@ public class FlashcardInfo {
         return foreignLanguage;
     }
 
-    public void setForeignLanguage(String foreignLanguage) {
-        this.foreignLanguage = foreignLanguage;
-    }
-
     public String getLevel() {
         return level;
     }
 
-    public void setLevel(String level) {
-        this.level = level;
-    }
-
     public String getCategory() {
         return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 }
