@@ -29,9 +29,13 @@ public class Printer {
     private static Float[] HORIZONTALS_Y = {0.0f, CARD_WIDTH, 2 * CARD_WIDTH, 3 * CARD_WIDTH, 4 * CARD_WIDTH};
 
     public static void main(String[] args) {
+        Printer.parseAndPrintFlashcards("./input/de_words12.txt", "./output/flashcards.pdf");
+    }
 
+    public static void parseAndPrintFlashcards(String inputFilename, String outputFilename) {
+        System.out.println(inputFilename + " " + outputFilename);
         try (PDDocument doc = new PDDocument()) {
-            List<Flashcard> flashcards = loadFlashcards();
+            List<Flashcard> flashcards = loadFlashcards(inputFilename);
             System.out.println(flashcards.size());
             FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
 
@@ -40,7 +44,7 @@ public class Printer {
                 createPage(doc, flashcards, i, false);
             }
 
-            doc.save("./output/flashcards.pdf");
+            doc.save(outputFilename);
         } catch(IOException e) {
 
         }
@@ -68,12 +72,10 @@ public class Printer {
         }
     }
 
-    private static List<Flashcard> loadFlashcards() throws IOException {
+    private static List<Flashcard> loadFlashcards(String inputFilename) throws IOException {
         FlashcardInfo flashcardInfo = null;
         List<Flashcard> flashcards = new ArrayList<>();
-
-        String inputStreamFileName = ".\\output\\de_words12.txt";
-        InputStream inputStream = new FileInputStream(inputStreamFileName);
+        InputStream inputStream = new FileInputStream(inputFilename);
         InputStreamReader inputStreamReader = new InputStreamReader(inputStream, Charset.forName("UTF-16"));
         int data = inputStreamReader.read();
         StringBuffer input = new StringBuffer();
