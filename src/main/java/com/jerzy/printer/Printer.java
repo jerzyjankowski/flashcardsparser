@@ -53,9 +53,9 @@ public class Printer {
     private void createPage(PDDocument doc, List<Flashcard> flashcards, PageType pageType) throws IOException {
         PDPage page = new PDPage(PDRectangle.A4);
         doc.addPage(page);
+//        printCropBoxInfo(page); // INFO: left for debugging
 
         try (PDPageContentStream pageContentStream = new PDPageContentStream(doc, page)) {
-//            printCropBoxInfo(page); // INFO: left for debugging
             if (pageType.isGridded()) {
                 drawGrid(pageContentStream);
             }
@@ -64,13 +64,7 @@ public class Printer {
             pageContentStream.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
 
             for (int i = 0; i < flashcards.size() && i < FLASHCARDS_PER_PAGE; i++) {
-                Flashcard flashcard = flashcards.get(i);
-                String text = pageType.isFront() ? flashcard.getFrontWord() : flashcard.getBackWord();
-                String info = flashcard.getFlashcardInfoString();
-                int column = pageType.isFront() ? (i % 4) : (3 - i % 4);
-                int row = (i / 4) % 6;
-
-                drawText(pageContentStream, text, info, column, row);
+                drawFlashcard(pageContentStream, pageType, flashcards.get(i), i);
             }
         }
     }
@@ -99,7 +93,17 @@ public class Printer {
         }
     }
 
-    private void drawText(PDPageContentStream contentStream, String text, String flashcardInfoText, int column, int row) throws IOException {
+    private void drawFlashcard(PDPageContentStream pageContentStream, PageType pageType, Flashcard flashcard, int index) throws IOException {
+        String text = pageType.isFront() ? flashcard.getFrontWord() : flashcard.getBackWord();
+        String info = flashcard.getFlashcardInfoString();
+        int column = pageType.isFront() ? (index % 4) : (3 - index % 4);
+        int row = (index / 4) % 6;
+
+        drawText(pageContentStream, text, column, row);
+        drawInfo(pageContentStream, info, column, row);
+    }
+
+    private void drawText(PDPageContentStream contentStream, String text, int column, int row) throws IOException {
 
         List<String> lines;
         float width;
@@ -136,11 +140,11 @@ public class Printer {
                 maxWidth = Math.max(maxWidth, FONT.getStringWidth(line) / 1000 * fontSize);
             }
         }
-        while(maxWidth > MAX_CARD_CONTENT_WIDTH || height > MAX_CARD_CONTENT_HEIGHT);
+        while (maxWidth > MAX_CARD_CONTENT_WIDTH || height > MAX_CARD_CONTENT_HEIGHT);
 
-        for(int i = 0; i < lines.size(); i++) {
+        for (int i = 0; i < lines.size(); i++) {
             String lineText = lines.get(i);
-            float lineTextWidth = FONT.getStringWidth(lineText)/1000 * fontSize;
+            float lineTextWidth = FONT.getStringWidth(lineText) / 1000 * fontSize;
             float tx = column * CARD_WIDTH + CARD_WIDTH / 2 - lineTextWidth / 2;
             float ty = row * CARD_HEIGHT + CARD_HEIGHT / 2 + height / 2 - lineHeight * (i + 1) - ((lineHeight / 2) * i);
 
@@ -154,14 +158,16 @@ public class Printer {
             contentStream.endText();
         }
 
+    }
+    private void drawInfo(PDPageContentStream contentStream, String text, int column, int row) throws IOException {
         contentStream.beginText();
         contentStream.setFont(FONT, INFO_FONT_SIZE);
         contentStream.setNonStrokingColor(128, 128, 128);
-        contentStream.setLeading(fontSize * 0.8f);
+        contentStream.setLeading(13);
 
-        contentStream.newLineAtOffset(column * CARD_WIDTH + CARD_WIDTH / 2 - FONT.getStringWidth(flashcardInfoText)/1000 * INFO_FONT_SIZE / 2,
+        contentStream.newLineAtOffset(column * CARD_WIDTH + CARD_WIDTH / 2 - FONT.getStringWidth(text)/1000 * INFO_FONT_SIZE / 2,
                 row * CARD_HEIGHT + 10);
-        contentStream.showText(flashcardInfoText);
+        contentStream.showText(text);
         contentStream.endText();
     }
 }
