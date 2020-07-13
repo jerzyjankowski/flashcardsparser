@@ -27,11 +27,11 @@ public class Printer {
             5 * CARD_HEIGHT, 6 * CARD_HEIGHT};
     private static Float[] HORIZONTALS_Y = {0.0f, CARD_WIDTH, 2 * CARD_WIDTH, 3 * CARD_WIDTH, 4 * CARD_WIDTH};
 
-    private Loader loader = new Loader();
+    private Parser loader = new Parser();
 
     public boolean parseAndPrintFlashcards(String inputFilename, String outputFilename) {
         try (PDDocument doc = new PDDocument()) {
-            List<Flashcard> flashcards = loader.loadFlashcardsFromFile(inputFilename);
+            List<Flashcard> flashcards = loader.parseFlashcardsFromFile(inputFilename);
             FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
 
             for(int i = 0; i < flashcards.size(); i += 24) {
