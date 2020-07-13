@@ -1,6 +1,7 @@
 package com.jerzy.printer;
 
 import com.jerzy.printer.model.Flashcard;
+import com.jerzy.printer.model.PageType;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -14,6 +15,9 @@ import java.util.List;
 
 public class Printer {
 
+    public static final String FONT_PATH = "src/resource/Roboto-Regular.ttf";
+    public static final int FLASHCARDS_PER_PAGE = 24;
+    public static final int INFO_FONT_SIZE = 6;
     private static PDType0Font FONT;
     private static Integer VERTICALS_NO = 6;
     private static Integer HORIZONTALS_NO = 4;
@@ -27,16 +31,16 @@ public class Printer {
             5 * CARD_HEIGHT, 6 * CARD_HEIGHT};
     private static Float[] HORIZONTALS_Y = {0.0f, CARD_WIDTH, 2 * CARD_WIDTH, 3 * CARD_WIDTH, 4 * CARD_WIDTH};
 
-    private Parser loader = new Parser();
+    private Parser parser = new Parser();
 
-    public boolean parseAndPrintFlashcards(String inputFilename, String outputFilename) {
+    public boolean parseAndPrintFlashcardsAndReturnIfSuccess(String inputFilename, String outputFilename, boolean pdfWithGrid) {
         try (PDDocument doc = new PDDocument()) {
-            List<Flashcard> flashcards = loader.parseFlashcardsFromFile(inputFilename);
-            FONT = PDType0Font.load( doc, new FileInputStream(new File( "src/resource/Roboto-Regular.ttf")), true);
+            List<Flashcard> flashcards = parser.parseFlashcardsFromFile(inputFilename);
+            FONT = PDType0Font.load( doc, new FileInputStream(new File(FONT_PATH)), true);
 
-            for(int i = 0; i < flashcards.size(); i += 24) {
-                createPage(doc, flashcards, i, true);
-                createPage(doc, flashcards, i, false);
+            for(int i = 0; i < flashcards.size(); i += FLASHCARDS_PER_PAGE) {
+                createPage(doc, flashcards.subList(i, i + FLASHCARDS_PER_PAGE), new PageType(true, pdfWithGrid));
+                createPage(doc, flashcards.subList(i, i + FLASHCARDS_PER_PAGE), new PageType(false, pdfWithGrid));
             }
 
             doc.save(outputFilename);
@@ -46,30 +50,32 @@ public class Printer {
         }
     }
 
-    private void createPage(PDDocument doc, List<Flashcard> flashcards, int startingFlashcardNumber, boolean isPolish) throws IOException {
+    private void createPage(PDDocument doc, List<Flashcard> flashcards, PageType pageType) throws IOException {
         PDPage page = new PDPage(PDRectangle.A4);
         doc.addPage(page);
 
-        try (PDPageContentStream cont = new PDPageContentStream(doc, page)) {
-//            printCropBoxInfo(page);
-//            drawLines(cont);
+        try (PDPageContentStream pageContentStream = new PDPageContentStream(doc, page)) {
+//            printCropBoxInfo(page); // INFO: left for debugging
+            if (pageType.isGridded()) {
+                drawGrid(pageContentStream);
+            }
 
-            cont.transform(Matrix.getRotateInstance(Math.toRadians(90), 0, 0));
-            cont.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
+            pageContentStream.transform(Matrix.getRotateInstance(Math.toRadians(90), 0, 0));
+            pageContentStream.transform(Matrix.getTranslateInstance(0, -PAGE_WIDTH));
 
-            for (int i = startingFlashcardNumber; i < flashcards.size() && i < startingFlashcardNumber + 24; i++) {
-                if(isPolish) {
-                    drawText(cont, flashcards.get(i).getFrontWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
-                }
-                else {
-                    drawForeignText(cont, flashcards.get(i).getForeignWords().get(0), flashcards.get(i).getFlashcardInfoString(), i % 4, (i / 4) % 6);
-                }
+            for (int i = 0; i < flashcards.size() && i < FLASHCARDS_PER_PAGE; i++) {
+                Flashcard flashcard = flashcards.get(i);
+                String text = pageType.isFront() ? flashcard.getFrontWord() : flashcard.getBackWord();
+                String info = flashcard.getFlashcardInfoString();
+                int column = pageType.isFront() ? (i % 4) : (3 - i % 4);
+                int row = (i / 4) % 6;
+
+                drawText(pageContentStream, text, info, column, row);
             }
         }
     }
 
-
-
+    // INFO: left for debugging
     private void printCropBoxInfo(PDPage myPage) {
         PDRectangle cropBox = myPage.getCropBox();
         System.out.println(PAGE_WIDTH + " " + PAGE_HEIGHT);
@@ -78,7 +84,7 @@ public class Printer {
         System.out.println(cropBox.getUpperRightX() + " " + cropBox.getUpperRightY());
     }
 
-    private void drawLines(PDPageContentStream cont) throws IOException {
+    private void drawGrid(PDPageContentStream cont) throws IOException {
         cont.setStrokingColor(192, 192, 192);
         for(int i = 1; i < VERTICALS_NO; i++) {
             cont.moveTo(VERTICALS_X[i], 0);
@@ -93,11 +99,7 @@ public class Printer {
         }
     }
 
-    private void drawForeignText(PDPageContentStream cont, String text, String flashcardInfoText, int x, int y) throws IOException {
-        drawText(cont, text, flashcardInfoText, 3-x, y);
-    }
-
-    private void drawText(PDPageContentStream cont, String text, String flashcardInfoText, int xField, int yField) throws IOException {
+    private void drawText(PDPageContentStream contentStream, String text, String flashcardInfoText, int column, int row) throws IOException {
 
         List<String> lines;
         float width;
@@ -139,28 +141,27 @@ public class Printer {
         for(int i = 0; i < lines.size(); i++) {
             String lineText = lines.get(i);
             float lineTextWidth = FONT.getStringWidth(lineText)/1000 * fontSize;
-            float tx = xField * CARD_WIDTH + CARD_WIDTH / 2 - lineTextWidth / 2;
-            float ty = yField * CARD_HEIGHT + CARD_HEIGHT / 2 + height / 2 - lineHeight * (i + 1) - ((lineHeight / 2) * i);
+            float tx = column * CARD_WIDTH + CARD_WIDTH / 2 - lineTextWidth / 2;
+            float ty = row * CARD_HEIGHT + CARD_HEIGHT / 2 + height / 2 - lineHeight * (i + 1) - ((lineHeight / 2) * i);
 
-            cont.beginText();
-            cont.setFont(FONT, fontSize);
-            cont.setNonStrokingColor(128, 128, 128);
-            cont.setLeading(fontSize * 0.8f);
+            contentStream.beginText();
+            contentStream.setFont(FONT, fontSize);
+            contentStream.setNonStrokingColor(128, 128, 128);
+            contentStream.setLeading(fontSize * 0.8f);
 
-            cont.newLineAtOffset(tx, ty);
-            cont.showText(lineText);
-            cont.endText();
+            contentStream.newLineAtOffset(tx, ty);
+            contentStream.showText(lineText);
+            contentStream.endText();
         }
 
-        float flashcardInfoFontSize = 6;
-        cont.beginText();
-        cont.setFont(FONT, flashcardInfoFontSize);
-        cont.setNonStrokingColor(128, 128, 128);
-        cont.setLeading(fontSize * 0.8f);
+        contentStream.beginText();
+        contentStream.setFont(FONT, INFO_FONT_SIZE);
+        contentStream.setNonStrokingColor(128, 128, 128);
+        contentStream.setLeading(fontSize * 0.8f);
 
-        cont.newLineAtOffset(xField * CARD_WIDTH + CARD_WIDTH / 2 - FONT.getStringWidth(flashcardInfoText)/1000 * flashcardInfoFontSize / 2,
-                yField * CARD_HEIGHT + 10);
-        cont.showText(flashcardInfoText);
-        cont.endText();
+        contentStream.newLineAtOffset(column * CARD_WIDTH + CARD_WIDTH / 2 - FONT.getStringWidth(flashcardInfoText)/1000 * INFO_FONT_SIZE / 2,
+                row * CARD_HEIGHT + 10);
+        contentStream.showText(flashcardInfoText);
+        contentStream.endText();
     }
 }
