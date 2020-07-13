@@ -1,6 +1,7 @@
 package com.jerzy.printer;
 
 import com.jerzy.printer.model.Flashcard;
+import com.jerzy.printer.model.FlashcardConfig;
 import com.jerzy.printer.model.PageType;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -94,64 +95,63 @@ public class Printer {
     }
 
     private void drawFlashcard(PDPageContentStream pageContentStream, PageType pageType, Flashcard flashcard, int index) throws IOException {
-        String text = pageType.isFront() ? flashcard.getFrontWord() : flashcard.getBackWord();
+        String text = pageType.isFront() ? flashcard.getFrontText() : flashcard.getBackText();
         String info = flashcard.getFlashcardInfoString();
         int column = pageType.isFront() ? (index % 4) : (3 - index % 4);
         int row = (index / 4) % 6;
 
-        drawText(pageContentStream, text, column, row);
+        FlashcardConfig config = computeFlashcardConfig(text);
+        drawText(pageContentStream, config, column, row);
         drawInfo(pageContentStream, info, column, row);
     }
 
-    private void drawText(PDPageContentStream contentStream, String text, int column, int row) throws IOException {
-
-        List<String> lines;
-        float width;
-        float lineHeight;
-        float height;
-        float maxWidth;
-        int fontSize = 17;
+    private FlashcardConfig computeFlashcardConfig(String text) throws IOException {
+        FlashcardConfig config = new FlashcardConfig();
 
         do {
-            fontSize--;
-            lines = new ArrayList<>();
-            width = FONT.getStringWidth(text) / 1000 * fontSize;
-            lineHeight = FONT.getFontDescriptor().getCapHeight() / 1000 * fontSize;
+            config.setFontSize(config.getFontSize() - 1);
+            config.setLines(new ArrayList<>());
+            config.setWidth(FONT.getStringWidth(text) / 1000 * config.getFontSize());
+            config.setLineHeight(FONT.getFontDescriptor().getCapHeight() / 1000 * config.getFontSize());
 
-            if (width > MAX_CARD_CONTENT_WIDTH) {
+            if (config.getWidth() > MAX_CARD_CONTENT_WIDTH) {
                 String[] words = text.split(" ");
                 String line = words[0];
                 for (int i = 1; i < words.length; i++) {
                     String newLine = line + " " + words[i];
-                    if (FONT.getStringWidth(newLine) / 1000 * fontSize < MAX_CARD_CONTENT_WIDTH) {
+                    if (FONT.getStringWidth(newLine) / 1000 * config.getFontSize() < MAX_CARD_CONTENT_WIDTH) {
                         line = newLine;
                     } else {
-                        lines.add(line);
+                        config.getLines().add(line);
                         line = words[i];
                     }
                 }
-                lines.add(line);
+                config.getLines().add(line);
             } else {
-                lines.add(text);
+                config.getLines().add(text);
             }
-            height = (lines.size() * lineHeight) + ((lines.size() - 1) * (lineHeight / 2));
-            maxWidth = 0;
-            for (String line : lines) {
-                maxWidth = Math.max(maxWidth, FONT.getStringWidth(line) / 1000 * fontSize);
+            config.setHeight((config.getLines().size() * config.getLineHeight()) + ((config.getLines().size() - 1) * (config.getLineHeight() / 2)));
+            config.setMaxWidth(0);
+            for (String line : config.getLines()) {
+                config.setMaxWidth(Math.max(config.getMaxWidth(), FONT.getStringWidth(line) / 1000 * config.getFontSize()));
             }
         }
-        while (maxWidth > MAX_CARD_CONTENT_WIDTH || height > MAX_CARD_CONTENT_HEIGHT);
+        while (config.getMaxWidth() > MAX_CARD_CONTENT_WIDTH || config.getHeight() > MAX_CARD_CONTENT_HEIGHT);
+        return config;
+    }
 
-        for (int i = 0; i < lines.size(); i++) {
-            String lineText = lines.get(i);
-            float lineTextWidth = FONT.getStringWidth(lineText) / 1000 * fontSize;
+    private void drawText(PDPageContentStream contentStream, FlashcardConfig config, int column, int row) throws IOException {
+        for (int i = 0; i < config.getLines().size(); i++) {
+            String lineText = config.getLines().get(i);
+            float lineTextWidth = FONT.getStringWidth(lineText) / 1000 * config.getFontSize();
             float tx = column * CARD_WIDTH + CARD_WIDTH / 2 - lineTextWidth / 2;
-            float ty = row * CARD_HEIGHT + CARD_HEIGHT / 2 + height / 2 - lineHeight * (i + 1) - ((lineHeight / 2) * i);
+            float ty = row * CARD_HEIGHT + CARD_HEIGHT / 2 + config.getHeight() / 2 -
+                    config.getLineHeight() * (i + 1) - ((config.getLineHeight() / 2) * i);
 
             contentStream.beginText();
-            contentStream.setFont(FONT, fontSize);
+            contentStream.setFont(FONT, config.getFontSize());
             contentStream.setNonStrokingColor(128, 128, 128);
-            contentStream.setLeading(fontSize * 0.8f);
+            contentStream.setLeading(config.getFontSize() * 0.8f);
 
             contentStream.newLineAtOffset(tx, ty);
             contentStream.showText(lineText);

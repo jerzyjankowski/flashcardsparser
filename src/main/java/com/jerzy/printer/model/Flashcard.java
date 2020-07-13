@@ -1,23 +1,23 @@
 package com.jerzy.printer.model;
 
 public class Flashcard {
-    private String frontWord;
-    private String backWord;
+    private String frontText;
+    private String backText;
     private FlashcardInfo flashcardInfo;
 
-    public Flashcard(String frontWord, String backWord, FlashcardInfo flashcardInfo) {
-        this.frontWord = frontWord;
-        this.backWord = backWord;
+    public Flashcard(String frontText, String backText, FlashcardInfo flashcardInfo) {
+        this.frontText = frontText;
+        this.backText = backText;
 
         this.flashcardInfo = flashcardInfo;
     }
 
-    public String getFrontWord() {
-        return frontWord;
+    public String getFrontText() {
+        return frontText;
     }
 
-    public String getBackWord() {
-        return backWord;
+    public String getBackText() {
+        return backText;
     }
 
     public String getFlashcardInfoString() {
