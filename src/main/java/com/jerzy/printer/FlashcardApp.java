@@ -1,4 +1,4 @@
-package com.jerzy.desktop;
+package com.jerzy.printer;
 
 import com.jerzy.printer.Printer;
 import javafx.application.Application;
